@@ -1,0 +1,40 @@
+{
+  "en": {
+    "NameError": "NameError: {detail}",
+    "TypeError": "TypeError: {detail}",
+    "ZeroDivisionError": "ZeroDivisionError: division by zero",
+    "IndexError": "IndexError: sequence index out of range",
+    "KeyError": "KeyError: key not found: {detail}",
+    "ValueError": "ValueError: {detail}",
+    "SyntaxError": "SyntaxError: {detail}",
+    "RuntimeError": "RuntimeError: {detail}",
+    "ExpectedToken": "Expected {expected}, got {got}",
+    "UnexpectedToken": "Unexpected token: {token}",
+    "MissingRParen": "Missing ')'",
+    "MissingColon": "Missing ':'",
+    "UnexpectedEOF": "Unexpected end of input",
+    "UnexpectedCharacter": "Unexpected character: {char}",
+    "UnterminatedString": "Unterminated string",
+    "InvalidIndent": "Invalid indent",
+    "AssignmentInCall": "Assignment '{token}' not allowed in function call. Did you mean '=='?"
+  },
+  "zh": {
+    "NameError": "名称错误: {detail}。请检查变量名拼写或是否忘记赋值",
+    "TypeError": "类型错误: {detail}。请检查操作数或参数类型是否符合预期",
+    "ZeroDivisionError": "运行时错误: 除以零。请检查除数是否为零",
+    "IndexError": "索引错误: 序列索引超出范围。请检查索引是否在 0..len(seq)-1 之间，或使用 len() 查看长度",
+    "KeyError": "键错误: 键不存在。请检查键名是否正确或使用 in 检查键是否存在",
+    "ValueError": "值错误: {detail}",
+    "SyntaxError": "语法错误: {detail}",
+    "RuntimeError": "运行时错误: {detail}",
+    "ExpectedToken": "期望的符号: {expected}, 实际: {got}",
+    "UnexpectedToken": "意外的符号: {token}",
+    "MissingRParen": "缺少右括号 ')'",
+    "MissingColon": "缺少冒号 ':'",
+    "UnexpectedEOF": "意外的文件结束",
+    "UnexpectedCharacter": "意外的字符: {char}",
+    "UnterminatedString": "未终止的字符串",
+    "InvalidIndent": "缩进错误: 缩进不符合预期",
+    "AssignmentInCall": "函数调用中不能使用赋值 {token}，你可能想写 '=='？"
+  }
+}

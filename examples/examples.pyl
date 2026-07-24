@@ -1,0 +1,37 @@
+# PyLiuno example programs
+
+# --- example: hello_world
+print("Hello, PyLiuno!")
+
+# --- example: arithmetic_and_vars
+x = 10
+y = 3
+z = x * (y + 2) / 5
+print("z =", z)
+
+# --- example: conditional
+def sign(n):
+    if n > 0:
+        return 1
+    else:
+        return -1
+
+print(sign(10))
+print(sign(-5))
+
+# --- example: factorial_recursive
+def fact(n):
+    if n <= 1:
+        return 1
+    else:
+        return n * fact(n - 1)
+
+print(fact(5))
+
+# --- example: while_loop
+i = 0
+sum = 0
+while i < 5:
+    sum = sum + i
+    i = i + 1
+print(sum)

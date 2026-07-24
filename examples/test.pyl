@@ -1,0 +1,31 @@
+# test_errors.pyl
+# 把这个保存到文件，然后用 pyl run test_errors.pyl 运行
+# 看看各种中文错误提示！
+
+# 1. 变量未定义
+print(x)
+
+# 2. 函数参数不够
+def add(a, b):
+    return a + b
+
+print(add(1))
+
+# 3. 除以零
+result = 10 / 0
+
+# 4. 列表索引越界
+nums = [1, 2, 3]
+print(nums[5])
+
+# 5. 字典键不存在
+data = {"name": "PyLiuno"}
+print(data["age"])
+
+# 6. 类型错误 - 字符串和数字拼接
+name = "PyLiuno"
+age = 1
+print(name + age)
+
+# 7. 语法错误 - 赋值写反了
+1 = x
