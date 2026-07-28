@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PyLiuno"
+version = "0.1.0"
+description = "A small educational programming language implemented in Python"
+readme = "PyLiuno/README.md"
+license = {text = "MIT"}
+authors = [ {name = "PyLiuno Author"} ]
+requires-python = ">=3.8"
+
+[tool.setuptools]
+packages = ["PyLiuno"]
+
+[project.scripts]
+pyl = "PyLiuno.cli:main"
