@@ -73,6 +73,7 @@ class ParserError(Exception):
                 'RBRACE': "右大括号 '}'",
                 'COLON': "冒号 ':'",
                 'COMMA': "逗号 ','",
+                'DOT': "点号 '.'",
             }
             
             if tkn.type in friendly_names:
@@ -225,6 +226,18 @@ class Parser:
         return mod
 
     def parse_stmt(self):
+        if self.current.type == 'GLOBAL':
+            tok = self.current
+            self.advance()
+            names = []
+            names.append(self.expect('NAME').value)
+            while self.current.type == 'COMMA':
+                self.advance()
+                names.append(self.expect('NAME').value)
+            if self.current.type == 'NEWLINE': self.advance()
+            node = ast.Global(names)
+            setattr(node, 'lineno', tok.line)
+            return node
         if self.current.type == 'DEF':
             return self.parse_funcdef()
         if self.current.type == 'IF':
@@ -250,9 +263,17 @@ class Parser:
         if self.current.type == 'RETURN':
             ret_tok = self.current
             self.advance()
-            expr = self.parse_expr()
+            # 支持多值返回: return expr1, expr2, ...
+            exprs = []
+            exprs.append(self.parse_expr())
+            while self.current.type == 'COMMA':
+                self.advance()
+                exprs.append(self.parse_expr())
             if self.current.type == 'NEWLINE': self.advance()
-            node = ast.Return(expr)
+            if len(exprs) == 1:
+                node = ast.Return(exprs[0])
+            else:
+                node = ast.Return(ast.ListNode(exprs))
             setattr(node, 'lineno', ret_tok.line)
             return node
         if self.current.type == 'PRINT':
@@ -580,6 +601,24 @@ class Parser:
                 node = ast.Subscript(node, idx)
                 setattr(node, 'lineno', lb.line)
                 setattr(node, 'col', getattr(idx, 'col', lb.col))  # 用键的列号
+            while self.current.type == 'DOT':
+                dot_tok = self.current
+                self.advance()
+                method_name = self.expect('NAME').value
+                self.expect('LPAREN')
+                args = []
+                if self.current.type != 'RPAREN':
+                    args.append(self.parse_expr())
+                    while self.current.type == 'COMMA':
+                        self.advance()
+                        args.append(self.parse_expr())
+                self.expect('RPAREN')
+                method_node = ast.Name(method_name)
+                setattr(method_node, 'lineno', dot_tok.line)
+                setattr(method_node, 'col', dot_tok.col)
+                node = ast.MethodCall(node, method_name, args)
+                setattr(node, 'lineno', dot_tok.line)
+                setattr(node, 'col', dot_tok.col)
             return node
         if t.type == 'LPAREN':
             self.advance()
@@ -595,6 +634,25 @@ class Parser:
                 node = ast.Subscript(node, idx)
                 setattr(node, 'lineno', lb.line)
                 setattr(node, 'col', lb.col)
+                            # method call e.g., lst.append(1)
+            while self.current.type == 'DOT':
+                dot_tok = self.current
+                self.advance()
+                method_name = self.expect('NAME').value
+                self.expect('LPAREN')
+                args = []
+                if self.current.type != 'RPAREN':
+                    args.append(self.parse_expr())
+                    while self.current.type == 'COMMA':
+                        self.advance()
+                        args.append(self.parse_expr())
+                self.expect('RPAREN')
+                method_node = ast.Name(method_name)
+                setattr(method_node, 'lineno', dot_tok.line)
+                setattr(method_node, 'col', dot_tok.col)
+                node = ast.MethodCall(node, method_name, args)
+                setattr(node, 'lineno', dot_tok.line)
+                setattr(node, 'col', dot_tok.col)
             return node
         if t.type == 'LBRACKET':
             # list literal

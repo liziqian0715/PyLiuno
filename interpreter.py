@@ -114,6 +114,7 @@ class Interpreter:
         self.frames[0]['float'] = self.builtin_float
         self.frames[0]['bool'] = self.builtin_bool
         self.frames[0]['list'] = self.builtin_list
+        self.frames[0]['__globals__'] = set()
 
     def builtin_range(self, *args):
         # support range(stop), range(start, stop), range(start, stop, step)
@@ -337,8 +338,11 @@ class Interpreter:
     def pop_frame(self):
         self.frames.pop()
 
-    def set_var(self, name: str, value: Any):
-        self.frames[-1][name] = value
+    def set_var(self, name: str, value: Any, global_: bool = False):
+        if global_:
+            self.frames[0][name] = value
+        else:
+            self.frames[-1][name] = value
 
     def find_var(self, name: str):
         for frame in reversed(self.frames):
@@ -357,9 +361,15 @@ class Interpreter:
             self.eval_expr(node.expr)
         elif t == 'Assign':
             val = self.eval_expr(node.value)
-            self.set_var(node.target.id, val)
+            # 检查是否在全局帧有标记
+            if node.target.id in self.frames[0].get('__globals__', set()):
+                self.set_var(node.target.id, val, global_=True)
+            else:
+                self.set_var(node.target.id, val)
         elif t == 'Return':
             val = self.eval_expr(node.value) if node.value is not None else None
+            if isinstance(val, list):
+                val = tuple(val)
             raise ReturnSignal(val)
         elif t == 'Print':
             vals = [self.eval_expr(a) for a in node.args]
@@ -420,11 +430,39 @@ class Interpreter:
                     continue
                 except BreakSignal:
                     break
+        elif t == 'Global':
+            for name in node.names:
+                self.frames[0]['__globals__'].add(name)
         else:
             raise NotImplementedError(f"exec_stmt not implemented for {t}")
 
     def eval_expr(self, node):
         t = type(node).__name__
+        if t == 'MethodCall':
+            obj = self.eval_expr(node.obj)
+            method_name = node.method
+            args = [self.eval_expr(a) for a in node.args]
+            # 对 list 的内置方法
+            if isinstance(obj, list):
+                if method_name == 'append':
+                    obj.append(*args)
+                    return None
+                elif method_name == 'pop':
+                    return obj.pop(*args)
+            # 对 dict 的内置方法
+            if isinstance(obj, dict):
+                if method_name == 'keys':
+                    return list(obj.keys())
+                elif method_name == 'values':
+                    return list(obj.values())
+                elif method_name == 'items':
+                    return list(obj.items())
+            # 其他 Python 对象的方法，直接用 getattr
+            method = getattr(obj, method_name, None)
+            if method is not None and callable(method):
+                return method(*args)
+            raise AttributeError(f"'{type(obj).__name__}' 没有方法 '{method_name}'")
+        
         if t == 'Number':
             return node.value
         if t == 'String':

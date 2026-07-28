@@ -52,11 +52,12 @@ _token_spec = [
     ('RBRACKET', r'\]'),
     ('LBRACE',   r'\{'),
     ('RBRACE',   r'\}'),
+    ('DOT',      r'\.'),
     ('SKIP',     r'[ \t]+'),
     ('MISMATCH', r'.'),
 ]
 _token_regex = re.compile('|'.join('(?P<%s>%s)' % pair for pair in _token_spec))
-KEYWORDS = {'def', 'if', 'elif', 'else', 'while', 'return', 'print', 'True', 'False', 'None', 'for', 'in', 'break', 'continue', 'and', 'or', 'not', 'xor', 'nand', 'nor'}
+KEYWORDS = {'def', 'if', 'elif', 'else', 'while', 'return', 'print', 'True', 'False', 'None', 'for', 'in', 'break', 'continue', 'and', 'or', 'not', 'xor', 'nand', 'nor', 'global'}
 
 
 def tokenize(code):
@@ -128,6 +129,8 @@ def tokenize(code):
                 yield Token('LBRACE', value, lineno, pos + 1)
             elif kind == 'RBRACE':
                 yield Token('RBRACE', value, lineno, pos + 1)
+            elif kind == 'DOT':
+                yield Token('DOT', value, lineno, pos + 1)
             elif kind == 'SKIP':
                 pass
             elif kind == 'MISMATCH':

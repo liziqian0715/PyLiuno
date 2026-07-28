@@ -102,6 +102,17 @@ class UnaryOp(Node):
     op: str
     operand: Node
 
+@dataclass
+class Global:
+    names: List[str]
+
+@dataclass
+class MethodCall:
+    obj: Any
+    method: str
+    args: List[Any]
+
+
 # Simple pretty printer for AST
 def dump(node, indent=0):
     pad = '  ' * indent
