@@ -267,6 +267,16 @@ class Interpreter:
             detail = strip_prefix(base_msg, 'ValueError', '值错误')
             msg = fmt('ValueError', detail)
             exc_type = ValueError
+        elif isinstance(e, AttributeError):
+            if lang == 'zh':
+                detail = strip_prefix(base_msg, 'AttributeError', '')
+                if "' 没有方法 '" in detail or "' has no method '" in detail:
+                    msg = fmt('RuntimeError', detail)
+                else:
+                    msg = fmt('RuntimeError', detail)
+            else:
+                msg = fmt('RuntimeError', base_msg)
+            exc_type = type(e)
         elif isinstance(e, SyntaxError):
             detail = strip_prefix(base_msg, 'SyntaxError', '语法错误')
             lower = detail.lower()
@@ -294,6 +304,7 @@ class Interpreter:
                         msg = fmt('SyntaxError', detail)
             except Exception:
                 pass
+
 
         if msg is None:
             if lang == 'zh' and 'maximum recursion depth exceeded' in base_msg:
@@ -461,7 +472,11 @@ class Interpreter:
             method = getattr(obj, method_name, None)
             if method is not None and callable(method):
                 return method(*args)
-            raise AttributeError(f"'{type(obj).__name__}' 没有方法 '{method_name}'")
+            exc = AttributeError(f"'{type(obj).__name__}' 没有方法 '{method_name}'")
+            if hasattr(node, 'col'):
+                exc.col = node.col
+            exc.token_len = len(method_name) + 2  # xxx()
+            raise exc
         
         if t == 'Number':
             return node.value

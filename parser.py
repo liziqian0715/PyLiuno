@@ -604,7 +604,8 @@ class Parser:
             while self.current.type == 'DOT':
                 dot_tok = self.current
                 self.advance()
-                method_name = self.expect('NAME').value
+                method_tok = self.expect('NAME')
+                method_name = method_tok.value
                 self.expect('LPAREN')
                 args = []
                 if self.current.type != 'RPAREN':
@@ -614,11 +615,11 @@ class Parser:
                         args.append(self.parse_expr())
                 self.expect('RPAREN')
                 method_node = ast.Name(method_name)
-                setattr(method_node, 'lineno', dot_tok.line)
-                setattr(method_node, 'col', dot_tok.col)
+                setattr(method_node, 'lineno', method_tok.line)
+                setattr(method_node, 'col', method_tok.col)
                 node = ast.MethodCall(node, method_name, args)
                 setattr(node, 'lineno', dot_tok.line)
-                setattr(node, 'col', dot_tok.col)
+                setattr(node, 'col', getattr(method_node, 'col', dot_tok.col))
             return node
         if t.type == 'LPAREN':
             self.advance()
@@ -638,7 +639,8 @@ class Parser:
             while self.current.type == 'DOT':
                 dot_tok = self.current
                 self.advance()
-                method_name = self.expect('NAME').value
+                method_tok = self.expect('NAME')
+                method_name = method_tok.value
                 self.expect('LPAREN')
                 args = []
                 if self.current.type != 'RPAREN':
@@ -648,11 +650,11 @@ class Parser:
                         args.append(self.parse_expr())
                 self.expect('RPAREN')
                 method_node = ast.Name(method_name)
-                setattr(method_node, 'lineno', dot_tok.line)
-                setattr(method_node, 'col', dot_tok.col)
+                setattr(method_node, 'lineno', method_tok.line)
+                setattr(method_node, 'col', method_tok.col)
                 node = ast.MethodCall(node, method_name, args)
                 setattr(node, 'lineno', dot_tok.line)
-                setattr(node, 'col', dot_tok.col)
+                setattr(node, 'col', getattr(method_node, 'col', dot_tok.col))
             return node
         if t.type == 'LBRACKET':
             # list literal
