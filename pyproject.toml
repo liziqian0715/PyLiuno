@@ -11,8 +11,8 @@ license = {text = "MIT"}
 authors = [{name = "Ultra_FiD", email = "liziqian0715@163.com"}]
 requires-python = ">=3.8"
 
-[tool.setuptools]
-py-modules = ["lexer", "parser", "ast", "interpreter", "cli", "settings"]
+[tool.setuptools.packages.find]
+where = ["."]
 
 [project.scripts]
-pyl = "cli:main"
+pyl = "PyLiuno.cli:main"
