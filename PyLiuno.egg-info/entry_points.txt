@@ -1,0 +1,2 @@
+[console_scripts]
+pyl = PyLiuno.cli:main
