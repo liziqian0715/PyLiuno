@@ -125,6 +125,33 @@ markdown
 
 PyLiuno —— 一个用 Python 实现的小型教学编程语言。
 
+
+markdown
+## 安装
+
+### 方式一：一行安装（推荐，需要 SSH）
+```bash
+pip install git+ssh://git@github.com/liziqian0715/PyLiuno.git
+方式二：克隆安装
+bash
+git clone git@github.com:liziqian0715/PyLiuno.git
+cd PyLiuno
+pip install -e .
+快速开始
+bash
+pyl repl
+:lang zh
+print("你好，PyLiuno！")
+text
+
+保存后：
+
+```bash
+git add README.md
+git commit -m "更新 README 安装说明"
+git push
+
+
 ## 快速开始
 
 运行单个示例：
