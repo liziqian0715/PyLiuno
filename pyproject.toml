@@ -16,3 +16,6 @@ where = ["."]
 
 [project.scripts]
 pyl = "PyLiuno.cli:main"
+
+[tool.setuptools.package-data]
+PyLiuno = ["i18n.json"]
