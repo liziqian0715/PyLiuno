@@ -57,7 +57,7 @@ _token_spec = [
     ('MISMATCH', r'.'),
 ]
 _token_regex = re.compile('|'.join('(?P<%s>%s)' % pair for pair in _token_spec))
-KEYWORDS = {'def', 'if', 'elif', 'else', 'while', 'return', 'print', 'True', 'False', 'None', 'for', 'in', 'break', 'continue', 'and', 'or', 'not', 'xor', 'nand', 'nor', 'global'}
+KEYWORDS = {'def', 'if', 'elif', 'else', 'while', 'return', 'print', 'True', 'False', 'None', 'for', 'in', 'break', 'continue', 'and', 'or', 'not', 'xor', 'nand', 'nor', 'global','import'}
 
 
 def tokenize(code):

@@ -238,6 +238,25 @@ class Parser:
             node = ast.Global(names)
             setattr(node, 'lineno', tok.line)
             return node
+        if self.current.type == 'IMPORT':
+            tok = self.current
+            self.advance()
+            # import "filename.pyl" 或 import filename
+            if self.current.type == 'STRING':
+                filename = self.current.value
+                file_tok = self.current
+                self.advance()
+            elif self.current.type == 'NAME':
+                filename = self.current.value + '.pyl'
+                file_tok = self.current
+                self.advance()
+            else:
+                raise ParserError('expected', token=self.current, expected='STRING', got=self.current)
+            if self.current.type == 'NEWLINE': self.advance()
+            node = ast.Import(filename)
+            setattr(node, 'lineno', tok.line)
+            setattr(node, 'col', file_tok.col + 1)
+            return node
         if self.current.type == 'DEF':
             return self.parse_funcdef()
         if self.current.type == 'IF':

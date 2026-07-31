@@ -6,9 +6,20 @@ Commands:
   pyl -h           - show help
 """
 import sys
+import io
+import os
 from typing import List
 from . import tokenize, Parser, Interpreter
 from .settings import set_language
+
+# 自动适配终端编码为 UTF-8（解决 Windows 中文乱码）
+if sys.platform == 'win32':
+    sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
+    try:
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    except Exception:
+        pass
+
 
 PROMPT = 'PyLiuno> '
 ANSI_GRAY = '\x1b[90m'
@@ -16,6 +27,7 @@ ANSI_RESET = '\x1b[0m'
 
 
 def run_file(path: str):
+    
     with open(path, 'r', encoding='utf-8') as f:
         code = f.read()
     tokens = tokenize(code)

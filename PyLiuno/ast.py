@@ -112,6 +112,9 @@ class MethodCall:
     method: str
     args: List[Any]
 
+@dataclass
+class Import:
+    filename: str
 
 # Simple pretty printer for AST
 def dump(node, indent=0):

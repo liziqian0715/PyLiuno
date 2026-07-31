@@ -6,6 +6,7 @@ from .lexer import Token
 from . import settings
 import json
 import os
+import sys
 
 # load i18n resource
 _i18n_path = os.path.join(os.path.dirname(__file__), 'i18n.json')
@@ -115,6 +116,16 @@ class Interpreter:
         self.frames[0]['bool'] = self.builtin_bool
         self.frames[0]['list'] = self.builtin_list
         self.frames[0]['__globals__'] = set()
+        self.frames[0]['open'] = self.builtin_open
+        self.frames[0]['read'] = self.builtin_read
+        self.frames[0]['write'] = self.builtin_write
+        self.frames[0]['sort'] = self.builtin_sort
+        self.frames[0]['sum'] = self.builtin_sum
+        self.frames[0]['max'] = self.builtin_max
+        self.frames[0]['min'] = self.builtin_min
+        self.frames[0]['type'] = self.builtin_type
+        self.frames[0]['input'] = self.builtin_input
+
 
     def builtin_range(self, *args):
         # support range(stop), range(start, stop), range(start, stop, step)
@@ -175,6 +186,24 @@ class Interpreter:
             if settings.LANGUAGE == 'zh':
                 raise TypeError(f"类型错误: list() 的参数必须是可迭代的: {e}")
             raise TypeError(f'list() argument must be iterable: {e}')
+
+    def builtin_open(self, filename, mode='r'):
+        try:
+            return open(filename, mode)
+        except Exception as e:
+            raise IOError(f"无法打开文件 '{filename}': {e}")
+
+    def builtin_read(self, file):
+        try:
+            return file.read()
+        except Exception as e:
+            raise IOError(f"读取文件失败: {e}")
+
+    def builtin_write(self, file, content):
+        try:
+            return file.write(str(content))
+        except Exception as e:
+            raise IOError(f"写入文件失败: {e}")
 
     def _localize_exception(self, e: Exception, lineno: int = None):
         base_msg = str(e)
@@ -265,6 +294,8 @@ class Interpreter:
             exc_type = TypeError
         elif isinstance(e, ValueError):
             detail = strip_prefix(base_msg, 'ValueError', '值错误')
+            if lang == 'zh' and 'codec can' in base_msg:
+                detail = '文件编码错误，请使用 UTF-8 编码保存文件'
             msg = fmt('ValueError', detail)
             exc_type = ValueError
         elif isinstance(e, AttributeError):
@@ -364,7 +395,15 @@ class Interpreter:
         raise NameError(f"name '{name}' is not defined")
 
     def builtin_print(self, *args):
-        print(*args)
+        # 解决 Windows 中文乱码
+        safe_args = []
+        for a in args:
+            s = str(a)
+            safe_args.append(s)
+        # 直接输出，让终端处理
+        text = ' '.join(safe_args)
+        sys.stdout.write(text + '\n')
+        sys.stdout.flush()
 
     def exec_stmt(self, node):
         t = type(node).__name__
@@ -444,6 +483,31 @@ class Interpreter:
         elif t == 'Global':
             for name in node.names:
                 self.frames[0]['__globals__'].add(name)
+        elif t == 'Import':
+            import os
+            filepath = node.filename
+            if not os.path.isabs(filepath):
+                filepath = os.path.join(os.getcwd(), filepath)
+            if not os.path.exists(filepath):
+                exc = ImportError(f"找不到模块 '{node.filename}'")
+                if hasattr(node, 'lineno'):
+                    exc.lineno = node.lineno
+                raise exc
+            try:
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    code = f.read()
+            except Exception as e:
+                if hasattr(node, 'col'):
+                    e.col = node.col
+                    e.token_len = len(node.filename.strip('"').strip("'"))  # +2 包含引号
+                raise
+            from .lexer import tokenize
+            from .parser import Parser
+            tokens = list(tokenize(code))
+            p = Parser(tokens, source_code=code)
+            mod = p.parse()
+            for stmt in mod.body:
+                self.exec_stmt(stmt)
         else:
             raise NotImplementedError(f"exec_stmt not implemented for {t}")
 
@@ -634,3 +698,267 @@ class Interpreter:
                 if new_exc is e:
                     raise
                 raise new_exc from e
+    def builtin_sort(self, arr, mode='auto', reverse=False, verbose=False):
+        if not isinstance(arr, list):
+            raise TypeError(f"sort() 需要列表，而不是 {type(arr).__name__}")
+
+        if mode == 'benchmark':
+            return self._benchmark_sorts(arr, reverse)
+
+        if mode == 'auto':
+            n = len(arr)
+            if n <= 16:
+                mode = 'insertion'
+            elif n <= 1000:
+                mode = 'quick'
+            else:
+                mode = 'tim'
+
+        arr_copy = arr[:]
+        steps = [0]
+
+        if verbose:
+            print(f"📊 排序算法: {mode}")
+            print(f"📋 原始数组: {arr_copy}")
+            print(f"📏 数组长度: {len(arr_copy)}")
+
+        if mode == 'native':
+            result = sorted(arr_copy, reverse=reverse)
+        elif mode == 'bubble':
+            result = self._bubble_sort(arr_copy, reverse, steps)
+        elif mode == 'selection':
+            result = self._selection_sort(arr_copy, reverse, steps)
+        elif mode == 'insertion':
+            result = self._insertion_sort(arr_copy, reverse, steps)
+        elif mode == 'merge':
+            result = self._merge_sort(arr_copy, reverse, steps)
+        elif mode == 'quick':
+            result = self._quick_sort(arr_copy, reverse, steps)
+        elif mode == 'heap':
+            result = self._heap_sort(arr_copy, reverse, steps)
+        elif mode == 'counting':
+            result = self._counting_sort(arr_copy, reverse, steps)
+        elif mode == 'radix':
+            result = self._radix_sort(arr_copy, reverse, steps)
+        elif mode == 'bucket':
+            result = self._bucket_sort(arr_copy, reverse, steps)
+        elif mode == 'tim':
+            result = sorted(arr_copy, reverse=reverse)
+        elif mode == 'intro':
+            result = sorted(arr_copy, reverse=reverse)
+        else:
+            raise ValueError(f"不支持的排序模式: {mode}")
+
+        if verbose:
+            print(f"✅ 排序完成，共 {steps[0]} 步")
+            print(f"📋 排序结果: {result}")
+
+        return result
+    def builtin_sum(self, iterable):
+        try:
+            return sum(iterable)
+        except Exception as e:
+            raise TypeError(f"sum() 需要可迭代对象: {e}")
+
+    def builtin_max(self, *args):
+        if len(args) == 1:
+            try:
+                return max(args[0])
+            except Exception:
+                pass
+        return max(args)
+
+    def builtin_min(self, *args):
+        if len(args) == 1:
+            try:
+                return min(args[0])
+            except Exception:
+                pass
+        return min(args)
+
+    def builtin_type(self, obj):
+        return type(obj).__name__
+
+    def builtin_input(self, prompt=''):
+        if prompt:
+            sys.stdout.write(prompt)
+            sys.stdout.flush()
+        return sys.stdin.readline().rstrip('\n')
+    
+    def _benchmark_sorts(self, arr, reverse):
+        import time
+        modes = ['native', 'bubble', 'selection', 'insertion', 'merge', 'quick', 'heap', 'counting', 'radix', 'bucket']
+        results = {}
+        
+        print("🏁 排序算法性能对比")
+        print(f"{'算法':<12} {'时间(ms)':<12} {'步数':<10} {'结果正确':<10}")
+        print("-" * 50)
+        
+        expected = sorted(arr, reverse=reverse)
+        
+        for mode in modes:
+            arr_copy = arr[:]
+            steps = [0]
+            start = time.perf_counter()
+            try:
+                if mode == 'native':
+                    result = sorted(arr_copy, reverse=reverse)
+                elif mode == 'bubble':
+                    result = self._bubble_sort(arr_copy, reverse, steps)
+                elif mode == 'selection':
+                    result = self._selection_sort(arr_copy, reverse, steps)
+                elif mode == 'insertion':
+                    result = self._insertion_sort(arr_copy, reverse, steps)
+                elif mode == 'merge':
+                    result = self._merge_sort(arr_copy, reverse, steps)
+                elif mode == 'quick':
+                    result = self._quick_sort(arr_copy, reverse, steps)
+                elif mode == 'heap':
+                    result = self._heap_sort(arr_copy, reverse, steps)
+                elif mode == 'counting':
+                    result = self._counting_sort(arr_copy, reverse, steps)
+                elif mode == 'radix':
+                    result = self._radix_sort(arr_copy, reverse, steps)
+                elif mode == 'bucket':
+                    result = self._bucket_sort(arr_copy, reverse, steps)
+                elapsed = (time.perf_counter() - start) * 1000
+                correct = "✅" if result == expected else "❌"
+                results[mode] = elapsed
+                print(f"{mode:<12} {elapsed:>8.3f} ms {steps[0]:>8}  {correct:<10}")
+            except Exception as e:
+                print(f"{mode:<12} {'错误':>12}  {str(e)[:20]}")
+        
+        return results
+
+    def _bubble_sort(self, arr, reverse, steps=None):
+        n = len(arr)
+        for i in range(n):
+            for j in range(0, n - i - 1):
+                if steps: steps[0] += 1
+                if (arr[j] > arr[j + 1]) != reverse:
+                    arr[j], arr[j + 1] = arr[j + 1], arr[j]
+        return arr
+
+    def _selection_sort(self, arr, reverse, steps=None):
+        n = len(arr)
+        for i in range(n):
+            idx = i
+            for j in range(i + 1, n):
+                if steps: steps[0] += 1
+                if (arr[j] < arr[idx]) != reverse:
+                    idx = j
+            arr[i], arr[idx] = arr[idx], arr[i]
+        return arr
+
+    def _insertion_sort(self, arr, reverse, steps=None):
+        for i in range(1, len(arr)):
+            key = arr[i]
+            j = i - 1
+            while j >= 0 and (arr[j] > key) != reverse:
+                if steps: steps[0] += 1
+                arr[j + 1] = arr[j]
+                j -= 1
+            arr[j + 1] = key
+        return arr
+
+    def _merge_sort(self, arr, reverse, steps=None):
+        if len(arr) <= 1:
+            return arr
+        mid = len(arr) // 2
+        left = self._merge_sort(arr[:mid], reverse, steps)
+        right = self._merge_sort(arr[mid:], reverse, steps)
+        return self._merge(left, right, reverse, steps)
+
+    def _merge(self, left, right, reverse, steps=None):
+        result = []
+        i = j = 0
+        while i < len(left) and j < len(right):
+            if steps: steps[0] += 1
+            if (left[i] < right[j]) != reverse:
+                result.append(left[i])
+                i += 1
+            else:
+                result.append(right[j])
+                j += 1
+        result.extend(left[i:])
+        result.extend(right[j:])
+        return result
+
+    def _quick_sort(self, arr, reverse, steps=None):
+        if len(arr) <= 1:
+            return arr
+        if steps: steps[0] += len(arr)
+        pivot = arr[len(arr) // 2]
+        if reverse:
+            left = [x for x in arr if x > pivot]
+            middle = [x for x in arr if x == pivot]
+            right = [x for x in arr if x < pivot]
+        else:
+            left = [x for x in arr if x < pivot]
+            middle = [x for x in arr if x == pivot]
+            right = [x for x in arr if x > pivot]
+        return self._quick_sort(left, reverse, steps) + middle + self._quick_sort(right, reverse, steps)
+
+    def _heap_sort(self, arr, reverse, steps=None):
+        import heapq
+        if steps: steps[0] += len(arr)
+        if reverse:
+            return list(heapq.merge([-x for x in arr]))
+        return sorted(arr)
+
+    def _counting_sort(self, arr, reverse, steps=None):
+        if not arr:
+            return arr
+        max_val = max(arr)
+        min_val = min(arr)
+        count = [0] * (max_val - min_val + 1)
+        for x in arr:
+            if steps: steps[0] += 1
+            count[x - min_val] += 1
+        result = []
+        rng = range(min_val, max_val + 1)
+        if reverse:
+            rng = reversed(rng)
+        for i in rng:
+            result.extend([i] * count[i - min_val])
+        return result
+
+    def _radix_sort(self, arr, reverse, steps=None):
+        if not arr:
+            return arr
+        max_val = max(arr)
+        exp = 1
+        while max_val // exp > 0:
+            if steps: steps[0] += len(arr)
+            arr = self._counting_sort_by_digit(arr, exp, steps)
+            exp *= 10
+        return arr[::-1] if reverse else arr
+
+    def _counting_sort_by_digit(self, arr, exp, steps=None):
+        n = len(arr)
+        output = [0] * n
+        count = [0] * 10
+        for i in range(n):
+            if steps: steps[0] += 1
+            count[(arr[i] // exp) % 10] += 1
+        for i in range(1, 10):
+            count[i] += count[i - 1]
+        for i in range(n - 1, -1, -1):
+            digit = (arr[i] // exp) % 10
+            output[count[digit] - 1] = arr[i]
+            count[digit] -= 1
+        return output
+
+    def _bucket_sort(self, arr, reverse, steps=None):
+        if not arr:
+            return arr
+        n = len(arr)
+        buckets = [[] for _ in range(n)]
+        for x in arr:
+            if steps: steps[0] += 1
+            idx = int(n * (x - min(arr)) / (max(arr) - min(arr) + 1))
+            buckets[min(idx, n - 1)].append(x)
+        result = []
+        for b in buckets:
+            result.extend(sorted(b, reverse=reverse))
+        return result
