@@ -9,3 +9,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.23", features = ["extension-module"] }
+
+[[bin]]
+name = "pyliuno"
+path = "src/main.rs"
