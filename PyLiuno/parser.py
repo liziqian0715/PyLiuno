@@ -604,15 +604,36 @@ class Parser:
                 lp_tok = self.current
                 self.advance()
                 args = []
+                kwargs = {}
                 if self.current.type != 'RPAREN':
-                    args.append(self.parse_expr())
+                    # 检查是否为 name=expr
+                    if self.current.type == 'NAME':
+                        # 看下一个 token 是不是 =
+                        nxt = self.tokens[self.pos+1] if self.pos+1 < len(self.tokens) else None
+                        if nxt and nxt.type == 'OP' and nxt.value == '=':
+                            key = self.expect('NAME').value
+                            self.expect('OP')  # =
+                            val = self.parse_expr()
+                            kwargs[key] = val
+                        else:
+                            args.append(self.parse_expr())
+                    else:
+                        args.append(self.parse_expr())
                     while self.current.type == 'COMMA':
                         self.advance()
+                        if self.current.type == 'NAME':
+                            nxt = self.tokens[self.pos+1] if self.pos+1 < len(self.tokens) else None
+                            if nxt and nxt.type == 'OP' and nxt.value == '=':
+                                key = self.expect('NAME').value
+                                self.expect('OP')
+                                val = self.parse_expr()
+                                kwargs[key] = val
+                                continue
                         args.append(self.parse_expr())
                 if self.current.type == 'OP' and self.current.value == '=':
                     raise ParserError('assignment_in_call', token=self.current)
                 self.expect('RPAREN')
-                node = ast.Call(node, args)
+                node = ast.Call(node, args, kwargs if kwargs else None)
                 setattr(node, 'lineno', lp_tok.line)
                 setattr(node, 'col', node.func.col)  # 用函数名的列号
             # subscription e.g., a[0]

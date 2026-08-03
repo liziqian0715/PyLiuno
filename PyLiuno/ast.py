@@ -59,9 +59,10 @@ class String(Node):
     value: str
 
 @dataclass
-class Call(Node):
-    func: Node
-    args: List[Node]
+class Call:
+    func: Any
+    args: List[Any]
+    kwargs: Dict[str, Any] = None
 
 @dataclass
 class ListNode(Node):

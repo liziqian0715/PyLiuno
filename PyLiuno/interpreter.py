@@ -682,6 +682,10 @@ class Interpreter:
             else:
                 fn = self.eval_expr(node.func)
             args = [self.eval_expr(a) for a in node.args]
+            kwargs = {}
+            if hasattr(node, 'kwargs') and node.kwargs:
+                for k, v in node.kwargs.items():
+                    kwargs[k] = self.eval_expr(v)
             if isinstance(fn, Function):
                 try:
                     return fn.call(self, args)
@@ -694,6 +698,8 @@ class Interpreter:
                         e.token_len = len(call_str)
                     raise
             if callable(fn):
+                if kwargs:
+                    return fn(*args, **kwargs)
                 return fn(*args)
             if settings.LANGUAGE == 'zh':
                 raise TypeError(f"类型错误: 对象不可调用: {fn}")
