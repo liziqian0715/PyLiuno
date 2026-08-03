@@ -701,15 +701,30 @@ class Parser:
                 setattr(node, 'col', getattr(method_node, 'col', dot_tok.col))
             return node
         if t.type == 'LBRACKET':
-            # list literal
             lb = self.current
             self.advance()
-            elements = []
-            if self.current.type != 'RBRACKET':
+            if self.current.type == 'RBRACKET':
+                self.expect('RBRACKET')
+                node = ast.ListNode([])
+                setattr(node, 'lineno', lb.line)
+                return node
+            first = self.parse_expr()
+            # 检测列表推导式: [expr for var in iterable]
+            if self.current.type == 'FOR':
+                self.advance()
+                var_tok = self.expect('NAME')
+                self.expect('IN')
+                iter_expr = self.parse_expr()
+                self.expect('RBRACKET')
+                node = ast.ListComp(first, var_tok.value, iter_expr)
+                setattr(node, 'lineno', lb.line)
+                setattr(node, 'col', lb.col)
+                return node
+            # 普通列表
+            elements = [first]
+            while self.current.type == 'COMMA':
+                self.advance()
                 elements.append(self.parse_expr())
-                while self.current.type == 'COMMA':
-                    self.advance()
-                    elements.append(self.parse_expr())
             self.expect('RBRACKET')
             node = ast.ListNode(elements)
             setattr(node, 'lineno', lb.line)

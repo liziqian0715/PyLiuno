@@ -117,6 +117,13 @@ class MethodCall:
 class Import:
     filename: str
 
+@dataclass
+class ListComp:
+    expr: Any
+    var: str
+    iter: Any
+
+
 # Simple pretty printer for AST
 def dump(node, indent=0):
     pad = '  ' * indent

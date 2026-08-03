@@ -553,6 +553,14 @@ class Interpreter:
                 exc.col = node.col
             exc.token_len = len(method_name) + 2  # xxx()
             raise exc
+
+        if t == 'ListComp':
+            iterable = self.eval_expr(node.iter)
+            result = []
+            for item in iterable:
+                self.set_var(node.var, item)
+                result.append(self.eval_expr(node.expr))
+            return result
         
         if t == 'Number':
             return node.value
