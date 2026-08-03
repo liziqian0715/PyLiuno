@@ -11,6 +11,12 @@ import os
 from typing import List
 from . import tokenize, Parser, Interpreter
 from .settings import set_language
+from prompt_toolkit import PromptSession
+from prompt_toolkit.lexers import PygmentsLexer
+from prompt_toolkit.styles import Style
+from pygments.lexers import PythonLexer
+from prompt_toolkit.formatted_text import HTML
+
 
 # 修复 Windows 终端中文乱码
 if sys.platform == 'win32':
@@ -50,38 +56,40 @@ def run_file(path: str):
 
 
 def repl():
-    """REPL with simple auto-indent behavior.
-
-    - When a non-empty line ends with ':' the indent level increases by one.
-    - When the user enters an empty line:
-      - if indent level > 0: dedent by one (do not evaluate yet)
-      - else: evaluate the accumulated buffer
-    - The prompt displayed reflects the current indent level.
-    - If the user did not type leading spaces while in an indented block, the REPL will prefix
-      the line with the current indent (4 spaces per level) so the code has correct indentation.
-    """
     print('PyLiuno REPL (enter blank line to evaluate, Ctrl-D to exit)')
     interp = Interpreter()
     buffer_lines: List[str] = []
     indent_level = 0
-    INDENT_STR = '    '  # 4 spaces
+    INDENT_STR = '    '
+    
+    session = PromptSession()
+    style = Style.from_dict({
+        'pygments.keyword': "#c974e2",
+        'pygments.literal.string': "#89c379",
+        'pygments.number': '#d19a66',
+        'pygments.comment': '#5c6370 italic',
+        'pygments.name.function': "#619aef",
+        'pygments.name.builtin': '#e5c07b',
+        'pygments.name': '#abb2bf',           # 普通变量名（白色）
+        'pygments.operator': '#56b6c2',
+    })
+    
     try:
         while True:
             try:
-                # Show the base prompt, add indentation spaces for alignment, and
-                # append a gray continuation marker for indented lines so it's clear
-                # that this is a continuation prompt.
                 if indent_level == 0:
                     prompt = PROMPT
                 else:
-                    # Show the continuation marker at the very start (replacing the main prompt),
-                    # then immediately follow it with enough spaces so the user's input
-                    # lines up under the original code column (after the main prompt).
-                    # Compute spaces = len(PROMPT) + indent_level * len(INDENT_STR).
-                    base_spaces = ' ' * (len(PROMPT) + indent_level * len(INDENT_STR))
-                    prompt = ANSI_GRAY + '... ' + ANSI_RESET + base_spaces
-                line = input(prompt)
-            except EOFError:
+                    spaces = ' ' * (len(PROMPT) + indent_level * len(INDENT_STR) - 4)
+                    prompt = HTML(f'<ansigray>... </ansigray>{spaces}')
+                
+                line = session.prompt(
+                    prompt,
+                    lexer=PygmentsLexer(PythonLexer),
+                    style=style,
+                    include_default_pygments_style=False,
+                )
+            except (EOFError, KeyboardInterrupt):
                 print()
                 break
 
@@ -102,13 +110,11 @@ def repl():
                     print('Usage: :lang en|zh')
                 continue
 
-            # Blank line handling: dedent if possible, otherwise evaluate
+            # Blank line handling
             if line.strip() == '':
                 if indent_level > 0:
                     indent_level -= 1
-                    # do not evaluate yet; wait for more blank lines to reach top-level
                     continue
-                # evaluate accumulated buffer
                 code = '\n'.join(buffer_lines).strip()
                 buffer_lines = []
                 if not code:
@@ -120,19 +126,14 @@ def repl():
                     interp.source_code = code
                     interp.run_module(mod)
                 except Exception as e:
-                    # run_module 已经做了本地化，直接打印
                     print('Error:', e)
                 continue
 
-            # If we're in an indented block and user didn't type leading spaces, add them
-            effective_line = line
-            if indent_level > 0 and not (line.startswith(' ') or line.startswith('\t')):
-                effective_line = INDENT_STR * indent_level + line
+            if indent_level > 0:
+                line = INDENT_STR * indent_level + line
+            buffer_lines.append(line)
 
-            buffer_lines.append(effective_line)
-
-            # If the line ends with ':' increase indent for subsequent lines
-            if effective_line.rstrip().endswith(':'):
+            if line.rstrip().endswith(':'):
                 indent_level += 1
 
     except KeyboardInterrupt:
