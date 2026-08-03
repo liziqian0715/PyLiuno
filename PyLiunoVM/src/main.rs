@@ -1,6 +1,7 @@
 mod value;
 mod vm2;
-
+mod lexer2;
+mod parser2;
 use vm2::Vm;
 use value::Value;
 use std::env;
@@ -23,27 +24,17 @@ fn main() {
             process::exit(1);
         }
     };
+    let tokens = lexer2::tokenize(&source);
     
-    // 暂时只支持简单表达式
-    // 完整版需要 Rust 写的 lexer + parser
-    println!("Reading: {}", path);
-    println!("Source: {}", source);
-    
-    // 用硬编码测试
-    let instructions = vec![
-        ("LOAD_CONST".to_string(), Some(Value::Int(0))),
-        ("STORE_NAME".to_string(), Some(Value::String("x".to_string()))),
-        ("LOAD_NAME".to_string(), Some(Value::String("x".to_string()))),
-        ("LOAD_CONST".to_string(), Some(Value::Int(1))),
-        ("BINARY_ADD".to_string(), None),
-        ("PRINT".to_string(), None),
-    ];
-    
-    let constants = vec![Value::Int(10), Value::Int(5)];
-    
-    let mut vm = Vm::new();
-    match vm.run(&instructions, &constants) {
-        Ok(()) => {},
-        Err(e) => eprintln!("Error: {}", e),
+    let mut parser = parser2::Parser::new(tokens);
+    match parser.parse() {
+        Ok((instructions, constants)) => {
+            let mut vm = Vm::new();
+            match vm.run(&instructions, &constants) {
+                Ok(()) => {},
+                Err(e) => eprintln!("Runtime error: {}", e),
+            }
+        }
+        Err(e) => eprintln!("Parse error: {}", e),
     }
 }
