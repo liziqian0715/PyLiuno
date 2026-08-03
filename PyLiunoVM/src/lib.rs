@@ -136,6 +136,18 @@ impl VM {
                     let result = a.call_method1(py, "__lt__", (b,))?;
                     self.stack.push(result);
                 }
+                "COMPARE_LE" => {
+                    let b = self.stack.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+                    let result = a.call_method1(py, "__le__", (b,))?;
+                    self.stack.push(result);
+                }
+                "COMPARE_GE" => {
+                    let b = self.stack.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+                    let result = a.call_method1(py, "__ge__", (b,))?;
+                    self.stack.push(result);
+                }
                 "COMPARE_GT" => {
                     let b = self.stack.pop().unwrap();
                     let a = self.stack.pop().unwrap();

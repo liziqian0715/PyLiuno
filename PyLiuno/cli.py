@@ -52,9 +52,9 @@ def run_file(path: str):
         from .compiler import Compiler
         c = Compiler()
         instrs = c.compile(mod)
-        adapted = adapt_instructions(instrs, c.constants)
+        adapted, adapted_consts = adapt_instructions(instrs, c.constants)
         vm = RustVM()
-        vm.run(adapted, c.constants)
+        vm.run(adapted, adapted_consts)
     else:
         interp = Interpreter(source_code=code)
         try:
@@ -135,9 +135,9 @@ def repl():
                         from .compiler import Compiler
                         c = Compiler()
                         instrs = c.compile(mod)
-                        adapted = adapt_instructions(instrs, c.constants)
+                        adapted, adapted_consts = adapt_instructions(instrs, c.constants)
                         vm = RustVM()
-                        vm.run(adapted, c.constants)
+                        vm.run(adapted, adapted_consts)
                     else:
                         interp.source_code = code
                         interp.run_module(mod)
