@@ -1,271 +1,249 @@
-# PyLiuno
-
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions)
-
-
-PyLiuno — a small educational programming language implemented in Python.
-
-Quick start
-
-- Run a single example:
-  python -c "import PyLiuno, sys; code=open('PyLiuno/examples/hello.pyl').read(); tokens=PyLiuno.tokenize(code); p=PyLiuno.Parser(tokens); mod=p.parse(); interp=PyLiuno.Interpreter(); interp.run_module(mod)"
-
-- Run tests:
-  python -m unittest discover -v PyLiuno/tests
-
-Examples
-
-The examples directory contains small demo programs:
-
-- examples/hello.pyl        — print a greeting
-- examples/arithmetic.pyl   — variables and arithmetic
-- examples/conditional.pyl  — if/else and simple functions
-- examples/factorial.pyl    — recursive function example
-- examples/while_loop.pyl   — while loop example
-
-Project layout
-
-- PyLiuno/
-  - __init__.py          # package API
-  - lexer.py             # tokenizer
-  - parser.py            # recursive-descent parser
-  - ast.py               # AST node classes
-  - interpreter.py       # AST interpreter
-  - examples/            # example programs
-  - tests/               # unit tests
-
-Local development / install
-
-To install the package in editable mode (recommended for development):
-
-1. From the project root (D:\\编程), run:
-
-   pip install -e .
-
-2. Then you can `import PyLiuno` from any script or run the examples as shown above.
-
-Design notes
-
-- Execution model: AST interpreter (chosen for simplicity and debuggability)
-- Types: dynamic (runtime)
-- Indentation-based blocks (similar to Python)
-
-Next steps
-
-- Expand standard library, improve error reporting, add CI, and refine packaging (pyproject.toml).
-
-Changelog (recent)
-
-- Lists support: list literals [a, b, c] and indexing a[0].
-- Dictionaries: dict literals {'k': v, ...} and key access d['k'].
-- For loops: basic for x in iterable: body implementation supporting lists and dicts.
-- CLI: 'pyl' command with 'pyl run <file>' and 'pyl repl' (REPL).
-
-Planned next features
-
-- break / continue in loops (done — see examples below).
-- Collection methods and iteration helpers (.items(), .values(), etc.)
-- Better REPL (history, multi-line editing)
-
-Break / Continue examples
-
-Break example (stops loop when condition met):
-
-example: examples/break_example.pyl
-
-    a = [1, 2, 3, 4]
-    s = 0
-    for x in a:
-        if x == 3:
-            break
-        s = s + x
-    print(s)  # prints 3
-
-Continue example (skips current iteration):
-
-example: examples/continue_example.pyl
-
-    a = [1, 2, 3, 4]
-    s = 0
-    for x in a:
-        if x == 2:
-            continue
-        s = s + x
-    print(s)  # prints 8
-
-You can run these examples with the CLI:
-
-    pyl run PyLiuno/examples/break_example.pyl
-    pyl run PyLiuno/examples/continue_example.pyl
-
-Recent additions
-
-- Built-in converters: str(), int(), float(), bool(), list()
-  - Use str(x) to produce string representations when concatenating with strings.
-- More built-ins: range(), len(), enumerate(), print(), ...
-- Custom logical operators: xor, nand, nor (with short-circuit semantics). See grammar.md for details.
-
-Documentation
-
-See grammar.md for updated syntax notes and operator precedence.
-
-Internationalization (i18n)
-
-- PyLiuno 支持中文错误提示：在 REPL 中使用 `:lang zh` 切换到中文错误消息，使用 `:lang en` 切回英文。
-- 切换后运行时和语法错误将以中文显示，并包含行号和简短建议（例如未定义变量会提示检查拼写或是否赋值）。
-
-
-
-
-
-
 
 markdown
-# PyLiuno
+# 🐉 PyLiuno
 
-PyLiuno —— 一个用 Python 实现的小型教学编程语言。
+**说中文的编程语言，错误提示再也不怕了。**
 
+[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-markdown
-## 安装
+PyLiuno 是一个用 Python 实现的、语法接近 Python 的中文友好编程语言。
+拥有世界级的中文错误提示系统，让编程学习不再被英文报错劝退。
 
-### 方式一：一行安装（推荐，需要 SSH）
+---
+
+## 🚀 快速开始
+
+### 安装（一行命令，需要 SSH）
+
 ```bash
 pip install git+ssh://git@github.com/liziqian0715/PyLiuno.git
-方式二：克隆安装
+或克隆安装
 bash
 git clone git@github.com:liziqian0715/PyLiuno.git
 cd PyLiuno
 pip install -e .
-快速开始
+运行
 bash
+# 交互式 REPL
 pyl repl
+
+# 切换到中文
 :lang zh
+
+# 写代码
 print("你好，PyLiuno！")
-text
 
-保存后：
+# 运行文件
+pyl run examples/hello.pyl
+✨ 特色
+特性	说明
+🀄 中文错误提示	运行时和语法错误全中文 + 友好建议
+🎯 精准指向	错误位置用 ^ 标注，一目了然
+📊 12种排序算法	内置 + 性能对比 + 过程可视化
+🔮 独有逻辑运算符	xor / nand / nor
+🛡️ try/catch/always	比 Python 更直观的异常处理
+🌐 中英文双语	:lang zh / :lang en 一键切换
+📋 示例
+基本语法
+python
+# 变量和运算
+x = 10
+y = 20
+print(x + y)
 
-```bash
-git add README.md
-git commit -m "更新 README 安装说明"
-git push
+# 条件和循环
+if x > 5:
+    print("大于5")
+elif x > 0:
+    print("正数")
 
+for i in range(5):
+    print(i)
 
-## 快速开始
+# 函数
+def add(a, b=1):
+    return a + b
+print(add(5))
+数据结构
+python
+# 列表
+lst = [1, 2, 3]
+lst.append(4)
+print(lst.pop())
 
-运行单个示例：
-```bash
-python -c "import PyLiuno, sys; code=open('PyLiuno/examples/hello.pyl').read(); tokens=PyLiuno.tokenize(code); p=PyLiuno.Parser(tokens); mod=p.parse(); interp=PyLiuno.Interpreter(); interp.run_module(mod)"
-运行测试：
+# 字典
+d = {"a": 1, "b": 2}
+for k, v in d.items():
+    print(k, v)
 
-bash
-python -m unittest discover -v PyLiuno/tests
-示例程序
-examples/ 目录包含一些小型演示程序：
+# 列表推导式
+squares = [x*x for x in range(5)]
+异常处理
+python
+try:
+    x = 1 / 0
+catch 除零错误:
+    print("不能除以零！")
+catch 所有错误:
+    print("出错了")
+always:
+    print("结束")
+排序算法对比
+python
+arr = [5, 2, 8, 1, 9, 3]
+print(sort(arr, mode='quick'))
+sort(arr, mode='benchmark')
+📦 内置函数
+函数	说明
+print()	输出
+input()	输入
+len()	长度
+range()	范围
+str() / int() / float() / bool() / list()	类型转换
+sum() / max() / min()	聚合
+type()	类型名
+enumerate()	枚举
+sort()	12种排序算法
+open() / read() / write()	文件操作
+🎯 错误提示示例
+python
+>>> print(x)
+名称错误: 名称 'x' 未定义。请检查变量名拼写或是否忘记赋值 (line 1)
+    print(x)
+          ^
 
-文件	说明
-hello.pyl	打印问候语
-arithmetic.pyl	变量和算术运算
-conditional.pyl	if/else 条件判断和简单函数
-factorial.pyl	递归函数示例
-while_loop.pyl	while 循环示例
-项目结构
+>>> 1+1=
+意外的符号: 等号 '=' 第1行第4列
+
+>>> print(1+1=2)
+函数调用中不能使用赋值 等号 '='，你可能想写 '=='？ 第1行第10列
+📁 项目结构
 text
 PyLiuno/
-├── __init__.py      # 包入口 API
-├── lexer.py         # 词法分析器（分词）
-├── parser.py        # 递归下降解析器
-├── ast.py           # AST 抽象语法树节点类
-├── interpreter.py   # AST 解释器
-├── examples/        # 示例程序
-└── tests/           # 单元测试
-本地开发 / 安装
-推荐以可编辑模式安装（便于开发）：
-
-在项目根目录（D:\编程）下运行：
-
+├── PyLiuno/
+│   ├── __init__.py
+│   ├── lexer.py         # 词法分析
+│   ├── parser.py        # 递归下降解析
+│   ├── ast.py           # AST 节点
+│   ├── interpreter.py   # 解释器
+│   ├── cli.py           # 命令行
+│   ├── settings.py      # 语言设置
+│   └── i18n.json        # 国际化模板
+├── examples/            # 示例程序
+├── tests/               # 单元测试
+├── pyproject.toml       # 打包配置
+└── README.md
+🔧 开发
 bash
+# 安装开发模式
 pip install -e .
-之后你就可以在任何脚本中导入 PyLiuno，或按上述方式运行示例。
 
-设计要点
-执行模型：AST 解释器（选择此方案是为了简洁性和可调试性）
-
-类型系统：动态类型（运行时确定）
-
-代码块：基于缩进（与 Python 类似）
-
-后续计划
-扩展标准库
-
-改进错误报告
-
-增加 CI 持续集成
-
-完善打包配置（pyproject.toml）
-
-更新日志（近期）
-列表支持：列表字面量 [a, b, c] 和索引访问 a[0]
-
-字典支持：字典字面量 {'k': v, ...} 和键访问 d['k']
-
-for 循环：基本 for x in iterable: 循环体实现，支持列表和字典
-
-CLI 命令行：pyl 命令，支持 pyl run <文件> 和 pyl repl（交互式环境）
-
-计划中的新特性
-break / continue 循环控制（已完成，见下方示例）
-
-集合方法和迭代辅助（.items()、.values() 等）
-
-更好的 REPL（历史记录、多行编辑）
-
-break / continue 示例
-break 示例（满足条件时终止循环）
-examples/break_example.pyl：
-
-python
-a = [1, 2, 3, 4]
-s = 0
-for x in a:
-    if x == 3:
-        break
-    s = s + x
-print(s)  # 输出 3
-continue 示例（跳过当前迭代）
-examples/continue_example.pyl：
-
-python
-a = [1, 2, 3, 4]
-s = 0
-for x in a:
-    if x == 2:
-        continue
-    s = s + x
-print(s)  # 输出 8
-使用 CLI 运行这些示例：
+# 运行测试
+python -m unittest discover -v PyLiuno/tests
+⚠️ Windows 用户注意
+中文乱码时请先执行：
 
 bash
-pyl run PyLiuno/examples/break_example.pyl
-pyl run PyLiuno/examples/continue_example.pyl
-近期新增
-内置类型转换函数：str()、int()、float()、bool()、list()
+chcp 65001
+pyl repl
+📄 许可
+MIT License
 
-使用 str(x) 可以在字符串拼接时获得字符串表示
+🌟 版本历史
+版本	内容
+v0.1.0	完整语言 + 中文错误提示
+v0.2.0	多值return + global + 方法调用
+v0.3.0	import + 12种sort + benchmark
+v0.3.1	字符串自动拼接 + elif精准指向
+v0.3.2	关键字参数
+v0.3.3	列表推导式
+v0.3.4	for解包迭代 + in/not in
+v0.3.5	try/catch/always
 
-更多内置函数：range()、len()、enumerate()、print() 等
 
-自定义逻辑运算符：xor、nand、nor（支持短路求值），详见 grammar.md
 
-文档
-语法细节和运算符优先级请参阅 grammar.md。
 
-国际化（i18n）
-PyLiuno 支持中文错误提示：
 
-在 REPL 中输入 :lang zh 切换到中文错误消息
 
-输入 :lang en 切回英文
 
-切换后，运行时错误和语法错误将以中文显示，并包含行号和简短建议（例如未定义变量时会提示检查拼写或是否赋值）。
+
+
+
+
+markdown
+# 🐉 PyLiuno
+
+**A Chinese-friendly programming language. Error messages you can actually read.**
+
+[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+PyLiuno is a Python-like language implemented in Python, featuring a world-class **localized error message system** with friendly suggestions and precise caret pointing.
+
+---
+
+## 🚀 Quick Start
+
+```bash
+pip install git+ssh://git@github.com/liziqian0715/PyLiuno.git
+pyl repl
+✨ Highlights
+🀄 Full Chinese error messages with suggestions
+
+🎯 Source line + ^ caret pointing
+
+📊 12 built-in sort algorithms with benchmark mode
+
+🔮 Custom operators: xor, nand, nor
+
+🛡️ try/catch/always for intuitive error handling
+
+🌐 Bilingual: :lang zh / :lang en
+
+📋 Code Examples
+python
+# Variables & loops
+for i in range(5):
+    print(i)
+
+# Functions with defaults & keyword args
+def greet(name, times=1):
+    for _ in range(times):
+        print("Hello, " + name)
+greet("PyLiuno", times=3)
+
+# List comprehension
+squares = [x*x for x in range(5)]
+
+# For unpacking
+d = {"a": 1, "b": 2}
+for k, v in d.items():
+    print(k, v)
+
+# Error handling
+try:
+    x = 1 / 0
+catch ZeroDivisionError:
+    print("Cannot divide by zero!")
+always:
+    print("Done")
+🎯 Error Messages
+text
+>>> print(x)
+NameError: name 'x' is not defined (line 1)
+    print(x)
+          ^
+📦 Built-in Functions
+Function	Description
+print input len range	Basic I/O
+str int float bool list	Type conversion
+sum max min type	Aggregation
+enumerate	Enumeration
+sort	12 algorithms with benchmark
+open read write	File I/O
+⚠️ Windows
+If Chinese output is garbled, run chcp 65001 first.
+
+🌟 Versions
+v0.1.0 → v0.3.5: Core language, Chinese errors, imports, 12 sorts, list comprehension, try/catch, and more.

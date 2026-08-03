@@ -42,7 +42,7 @@ _token_spec = [
     ('NUMBER',   r"\d+(?:\.\d+)?"),
     # simpler STRING pattern (non-greedy, line-limited)
     ('STRING',   r'".*?"|\'.*?\''),
-    ('NAME',     r'[A-Za-z_][A-Za-z0-9_]*'),
+    ('NAME',     r'[A-Za-z_\u4e00-\u9fff][A-Za-z0-9_\u4e00-\u9fff]*'),
     ('OP',       r'==|!=|<=|>=|->|[+\-*/%<>]=?|='),
     ('COLON',    r':'),
     ('COMMA',    r','),
@@ -57,7 +57,7 @@ _token_spec = [
     ('MISMATCH', r'.'),
 ]
 _token_regex = re.compile('|'.join('(?P<%s>%s)' % pair for pair in _token_spec))
-KEYWORDS = {'def', 'if', 'elif', 'else', 'while', 'return', 'print', 'True', 'False', 'None', 'for', 'in', 'break', 'continue', 'and', 'or', 'not', 'xor', 'nand', 'nor', 'global','import'}
+KEYWORDS = {'def', 'if', 'elif', 'else', 'while', 'return', 'print', 'True', 'False', 'None', 'for', 'in', 'break', 'continue', 'and', 'or', 'not', 'xor', 'nand', 'nor', 'global','import','try', 'catch', 'always'}
 
 
 def tokenize(code):

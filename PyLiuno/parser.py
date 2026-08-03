@@ -257,6 +257,31 @@ class Parser:
             setattr(node, 'lineno', tok.line)
             setattr(node, 'col', file_tok.col + 1)
             return node
+        if self.current.type == 'TRY':
+            tok = self.current
+            self.expect('TRY')
+            self.expect('COLON')
+            body = self.parse_block()
+            catches = []
+            always_body = None
+            while self.current.type == 'CATCH':
+                self.advance()
+                # catch 除零错误 / ZeroDivisionError / 所有错误:
+                error_type = '所有错误'
+                if self.current.type == 'NAME':
+                    error_type = self.current.value
+                    self.advance()
+                self.expect('COLON')
+                catch_body = self.parse_block()
+                catches.append((error_type, catch_body))
+            if self.current.type == 'ALWAYS':
+                self.advance()
+                self.expect('COLON')
+                always_body = self.parse_block()
+            node = ast.Try(body, catches, always_body)
+            setattr(node, 'lineno', tok.line)
+            return node
+
         if self.current.type == 'DEF':
             return self.parse_funcdef()
         if self.current.type == 'IF':
@@ -422,17 +447,25 @@ class Parser:
         return node
 
     def parse_for(self):
-        # FOR NAME IN expr ':' block
         for_tok = self.expect('FOR')
+        # 支持多变量解包: for x, y in ...
+        targets = []
         name_tok = self.expect('NAME')
-        target = ast.Name(name_tok.value)
-        setattr(target, 'lineno', name_tok.line)
-        setattr(target, 'col', name_tok.col)     # 列号
+        targets.append(ast.Name(name_tok.value))
+        setattr(targets[0], 'lineno', name_tok.line)
+        setattr(targets[0], 'col', name_tok.col)
+        while self.current.type == 'COMMA':
+            self.advance()
+            t = self.expect('NAME')
+            target = ast.Name(t.value)
+            setattr(target, 'lineno', t.line)
+            setattr(target, 'col', t.col)
+            targets.append(target)
         self.expect('IN')
         iter_expr = self.parse_expr()
         self.expect('COLON')
         body = self.parse_block()
-        node = ast.For(target, iter_expr, body)
+        node = ast.For(targets[0] if len(targets) == 1 else ast.ListNode(targets), iter_expr, body)
         setattr(node, 'lineno', for_tok.line)
         return node
 
@@ -524,7 +557,24 @@ class Parser:
 
     def parse_comparison(self):
         node = self.parse_term()
-        while self.current.type == 'OP' and self.current.value in ('<', '>', '<=', '>='):
+        while (self.current.type == 'OP' and self.current.value in ('<', '>', '<=', '>=')) or self.current.type == 'IN' or (self.current.type == 'NOT' and self.pos+1 < len(self.tokens) and self.tokens[self.pos+1].type == 'IN'):
+            if self.current.type == 'NOT':
+                op_tok = self.current
+                self.advance()
+                self.expect('IN')
+                right = self.parse_term()
+                node = ast.BinaryOp(node, 'not_in', right)
+                setattr(node, 'lineno', op_tok.line)
+                setattr(node, 'col', op_tok.col)
+                continue
+            if self.current.type == 'IN':
+                op_tok = self.current
+                self.advance()
+                right = self.parse_term()
+                node = ast.BinaryOp(node, 'in', right)
+                setattr(node, 'lineno', op_tok.line)
+                setattr(node, 'col', op_tok.col)
+                continue
             op_tok = self.current
             op = self.current.value
             self.advance()

@@ -12,9 +12,12 @@ from typing import List
 from . import tokenize, Parser, Interpreter
 from .settings import set_language
 
-# 自动适配终端编码为 UTF-8（解决 Windows 中文乱码）
+# 修复 Windows 终端中文乱码
 if sys.platform == 'win32':
-    sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
+    try:
+        sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
+    except Exception:
+        pass
     try:
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     except Exception:

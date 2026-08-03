@@ -205,6 +205,33 @@ class Interpreter:
         except Exception as e:
             raise IOError(f"写入文件失败: {e}")
 
+    def _match_error(self, e, error_type):
+        mapping = {
+            '除零错误': 'ZeroDivisionError',
+            'ZeroDivisionError': 'ZeroDivisionError',
+            '名称错误': 'NameError',
+            'NameError': 'NameError',
+            '类型错误': 'TypeError',
+            'TypeError': 'TypeError',
+            '索引错误': 'IndexError',
+            'IndexError': 'IndexError',
+            '键错误': 'KeyError',
+            'KeyError': 'KeyError',
+            '值错误': 'ValueError',
+            'ValueError': 'ValueError',
+            '语法错误': 'SyntaxError',
+            'SyntaxError': 'SyntaxError',
+            '所有错误': 'Exception',
+        }
+        cls_name = mapping.get(error_type)
+        if cls_name:
+            cls = {'ZeroDivisionError': ZeroDivisionError, 'NameError': NameError,
+                   'TypeError': TypeError, 'IndexError': IndexError, 'KeyError': KeyError,
+                   'ValueError': ValueError, 'SyntaxError': SyntaxError,
+                   'Exception': Exception}.get(cls_name)
+            return cls and isinstance(e, cls)
+        return False
+
     def _localize_exception(self, e: Exception, lineno: int = None):
         base_msg = str(e)
         lang = settings.LANGUAGE if hasattr(settings, 'LANGUAGE') else 'en'
@@ -383,6 +410,7 @@ class Interpreter:
     def set_var(self, name: str, value: Any, global_: bool = False):
         if global_:
             self.frames[0][name] = value
+        
         else:
             self.frames[-1][name] = value
 
@@ -395,15 +423,7 @@ class Interpreter:
         raise NameError(f"name '{name}' is not defined")
 
     def builtin_print(self, *args):
-        # 解决 Windows 中文乱码
-        safe_args = []
-        for a in args:
-            s = str(a)
-            safe_args.append(s)
-        # 直接输出，让终端处理
-        text = ' '.join(safe_args)
-        sys.stdout.write(text + '\n')
-        sys.stdout.flush()
+        print(*args)
 
     def exec_stmt(self, node):
         t = type(node).__name__
@@ -470,10 +490,17 @@ class Interpreter:
             raise ContinueSignal()
         elif t == 'For':
             iterable = self.eval_expr(node.iter)
-            # For dicts and lists and other iterables
             for item in iterable:
-                # bind loop variable in current frame
-                self.set_var(node.target.id, item)
+                # 支持解包: for x, y in dict.items()
+                if isinstance(node.target, ast_nodes.ListNode):
+                    # 多变量
+                    for i, target in enumerate(node.target.elements):
+                        if isinstance(item, (list, tuple)) and i < len(item):
+                            self.set_var(target.id, item[i])
+                        else:
+                            self.set_var(target.id, item)
+                else:
+                    self.set_var(node.target.id, item)
                 try:
                     for s in node.body:
                         try:
@@ -495,6 +522,24 @@ class Interpreter:
         elif t == 'Global':
             for name in node.names:
                 self.frames[0]['__globals__'].add(name)
+        elif t == 'Try':
+            try:
+                for s in node.body:
+                    self.exec_stmt(s)
+            except Exception as e:
+                handled = False
+                for error_type, catch_body in node.catches:
+                    if self._match_error(e, error_type):
+                        for s in catch_body:
+                            self.exec_stmt(s)
+                        handled = True
+                        break
+                if not handled:
+                    raise
+            finally:
+                if node.always_body:
+                    for s in node.always_body:
+                        self.exec_stmt(s)
         elif t == 'Import':
             import os
             filepath = node.filename
@@ -672,6 +717,10 @@ class Interpreter:
                 return left <= right
             if op == '>=':
                 return left >= right
+            if op == 'in':
+                return left in right
+            if op == 'not_in':
+                return left not in right
             raise NotImplementedError(f"Binary op {op} not implemented")
         if t == 'UnaryOp':
             if node.op == 'not':

@@ -118,6 +118,12 @@ class Import:
     filename: str
 
 @dataclass
+class Try:
+    body: List[Node]
+    catches: List[tuple]
+    always_body: List[Node] = None
+    
+@dataclass
 class ListComp:
     expr: Any
     var: str
