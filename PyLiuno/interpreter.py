@@ -434,7 +434,19 @@ class Interpreter:
                     for s in node.orelse:
                         self.exec_stmt(s)
                 else:
-                    self.exec_stmt(node.orelse)
+                    try:
+                        self.exec_stmt(node.orelse)
+                    except (ReturnSignal, BreakSignal, ContinueSignal):
+                        raise
+                    except Exception as e:
+                        lineno = getattr(node.orelse, 'lineno', None)
+                        col = getattr(node.orelse, 'col', None)
+                        if lineno:
+                            e.lineno = lineno
+                        if col:
+                            e.col = col
+                            e.token_len = getattr(node.orelse, 'token_len', 5)
+                        raise
         elif t == 'While':
             while self.eval_expr(node.test):
                 try:
@@ -610,7 +622,10 @@ class Interpreter:
             right = self.eval_expr(node.right)
             try:
                 if op == '+':
-                    return left + right
+                    try:
+                        return left + right
+                    except TypeError:
+                        return str(left) + str(right)
                 if op == '-':
                     return left - right
                 if op == '*':
@@ -691,9 +706,9 @@ class Interpreter:
                 self.exec_stmt(stmt)
             except Exception as e:
                 # annotate/localize and re-raise with lineno if available
-                lineno = getattr(stmt, 'lineno', None)
+                lineno = getattr(e, 'lineno', None) or getattr(stmt, 'lineno', None)
                 if lineno is None:
-                    lineno = i + 1  # fallback: 用语句序号当行号
+                    lineno = i + 1
                 new_exc = self._localize_exception(e, lineno)
                 if new_exc is e:
                     raise

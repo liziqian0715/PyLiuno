@@ -387,6 +387,10 @@ class Parser:
                 elif_body = self.parse_block()
                 new_if = ast.If(elif_test, elif_body, None)
                 setattr(new_if, 'lineno', elif_tok.line)
+                setattr(new_if, 'col', elif_tok.col + 5)  # 跳过 'elif '
+                setattr(new_if, 'token_len', 5)
+                # 计算条件长度（从 elif 后到 : 前）
+                # elif_test 是 AST 节点，用 _expr_len 估算
                 if head is None:
                     head = new_if
                     last = new_if
