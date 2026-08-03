@@ -36,23 +36,18 @@ ANSI_RESET = '\x1b[0m'
 
 
 def run_file(path: str):
-    
     with open(path, 'r', encoding='utf-8') as f:
         code = f.read()
+    # 用 VM 执行
+    from .compiler import Compiler
+    from .vm import VM
     tokens = tokenize(code)
     parser = Parser(tokens, source_code=code)
-    try:
-        mod = parser.parse()
-    except Exception as e:
-        # ParserError 消息已按当前语言格式化，直接打印
-        print('Error:', e)
-        return
-    interp = Interpreter(source_code=code)
-    try:
-        interp.run_module(mod)
-    except Exception as e:
-        # run_module 已经做了本地化，直接打印
-        print('Error:', e)
+    mod = parser.parse()
+    c = Compiler()
+    instrs = c.compile(mod)
+    vm = VM()
+    vm.run(instrs, c.constants)
 
 
 def repl():
@@ -120,11 +115,15 @@ def repl():
                 if not code:
                     continue
                 try:
+                    from .compiler import Compiler
+                    from .vm import VM
                     tokens = tokenize(code)
                     parser = Parser(tokens, source_code=code)
                     mod = parser.parse()
-                    interp.source_code = code
-                    interp.run_module(mod)
+                    c = Compiler()
+                    instrs = c.compile(mod)
+                    vm = VM()
+                    vm.run(instrs, c.constants)
                 except Exception as e:
                     print('Error:', e)
                 continue
