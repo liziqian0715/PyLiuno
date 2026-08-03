@@ -1,3 +1,6 @@
+mod value;
+mod vm2;
+use vm2::Vm;
 use pyo3::prelude::*;
 use pyo3::types::{PyList, PyDict, PyTuple};
 use std::collections::HashMap;
@@ -264,6 +267,6 @@ impl VM {
 
 #[pymodule]
 fn pyliuno_vm(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<VM>()?;
+    m.add_class::<VM>()?;      // 旧的 Python 依赖 VM
     Ok(())
 }
