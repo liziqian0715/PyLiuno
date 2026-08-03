@@ -11,6 +11,13 @@ import os
 from typing import List
 from . import tokenize, Parser, Interpreter
 from .settings import set_language
+# 尝试加载 Rust VM，不可用时回退到 Python VM
+try:
+    from pyliuno_vm import VM as RustVM
+    from .rust_vm_adapter import adapt_instructions, run_rust_vm
+    USE_RUST = True
+except ImportError:
+    USE_RUST = False
 from prompt_toolkit import PromptSession
 from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.styles import Style
@@ -38,16 +45,22 @@ ANSI_RESET = '\x1b[0m'
 def run_file(path: str):
     with open(path, 'r', encoding='utf-8') as f:
         code = f.read()
-    # 用 VM 执行
-    from .compiler import Compiler
-    from .vm import VM
     tokens = tokenize(code)
     parser = Parser(tokens, source_code=code)
     mod = parser.parse()
-    c = Compiler()
-    instrs = c.compile(mod)
-    vm = VM()
-    vm.run(instrs, c.constants)
+    if USE_RUST:
+        from .compiler import Compiler
+        c = Compiler()
+        instrs = c.compile(mod)
+        adapted = adapt_instructions(instrs, c.constants)
+        vm = RustVM()
+        vm.run(adapted, c.constants)
+    else:
+        interp = Interpreter(source_code=code)
+        try:
+            interp.run_module(mod)
+        except Exception as e:
+            print('Error:', e)
 
 
 def repl():
@@ -115,15 +128,19 @@ def repl():
                 if not code:
                     continue
                 try:
-                    from .compiler import Compiler
-                    from .vm import VM
                     tokens = tokenize(code)
                     parser = Parser(tokens, source_code=code)
                     mod = parser.parse()
-                    c = Compiler()
-                    instrs = c.compile(mod)
-                    vm = VM()
-                    vm.run(instrs, c.constants)
+                    if USE_RUST:
+                        from .compiler import Compiler
+                        c = Compiler()
+                        instrs = c.compile(mod)
+                        adapted = adapt_instructions(instrs, c.constants)
+                        vm = RustVM()
+                        vm.run(adapted, c.constants)
+                    else:
+                        interp.source_code = code
+                        interp.run_module(mod)
                 except Exception as e:
                     print('Error:', e)
                 continue
