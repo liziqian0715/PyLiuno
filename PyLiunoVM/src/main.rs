@@ -3,7 +3,6 @@ mod vm2;
 mod lexer2;
 mod parser2;
 use vm2::Vm;
-use value::Value;
 use std::env;
 use std::fs;
 use std::process;

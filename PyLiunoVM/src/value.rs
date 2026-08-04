@@ -2,7 +2,7 @@ use crate::vm2::Vm;
 use std::collections::HashMap;
 use std::fmt;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Int(i64),
     Float(f64),
@@ -15,12 +15,13 @@ pub enum Value {
     None,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Function {
     pub name: String,
     pub params: Vec<String>,
     pub body: Vec<(String, Option<Value>)>,
     pub constants: Vec<Value>,
+    pub defaults: Vec<bool>, // 默认值在 constants 中的索引
 }
 
 impl fmt::Display for Value {
